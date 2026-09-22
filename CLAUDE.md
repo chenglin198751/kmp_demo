@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Kotlin Multiplatform (KMP) + Compose Multiplatform 项目，同时面向 Android 与 iOS，且 **UI 也是共享的**（Compose Multiplatform）。平台入口层很薄，业务与界面代码都放在 `:shared` 模块的 `commonMain` 中。
 
+**本项目只有 Android 与 iOS 两个目标平台，没有 Desktop/JVM 目标。** README 中泛泛提到的 `jvmMain`/Desktop 目录在本工程并不存在，不要尝试添加或运行 desktop 相关任务。
+
 模块划分：
 - `:shared` — KMP 库，包含共享的 Compose UI（`App.kt`）与业务逻辑。编译产物：Android library + iOS 静态 framework（baseName `Shared`）。
 - `:androidApp` — Android 入口，`MainActivity` 仅调用 `setContent { App() }`。
@@ -45,6 +47,8 @@ Kotlin Multiplatform (KMP) + Compose Multiplatform 项目，同时面向 Android
 - 版本与依赖统一在 `gradle/libs.versions.toml`（version catalog），通过 `libs.xxx` 引用。
 - Android：minSdk 28，compileSdk / targetSdk 37，JVM target 11。Android SDK 路径见 `local.properties`（`sdk.dir`）。
 - Gradle daemon JVM 工具链为 JDK 21（`gradle/gradle-daemon-jvm.properties`）。
+- `settings.gradle.kts` 中 `google()` 仓库通过 `mavenContent { includeGroupAndSubgroups(...) }` 限定为 androidx / com.android / com.google 三个 group。新增其它 Google 系依赖（如 `com.google.firebase`、`com.google.dagger`）时需在该处补充对应 group，否则依赖无法解析。
+- `gradle.properties` 已开启 configuration cache（`org.gradle.configuration-cache=true`）与 build cache（`org.gradle.caching=true`）。修改构建脚本后若出现疑似缓存导致的异常，可先 `./gradlew --stop` 或 `clean` 排查。
 
 ### 新的 AGP KMP 插件（注意点）
 `shared/build.gradle.kts` 使用较新的 `com.android.kotlin.multiplatform.library` 插件（version catalog 中的 `androidMultiplatformLibrary`），而非旧式 `com.android.library`。其 `android {}` 块用 `withHostTest {}` / `withDeviceTestBuilder {}` 配置测试。因此 Android 单元测试的源码集名为 `androidHostTest`（不是旧的 `androidUnitTest`），对应测试任务名为 `testAndroidHostTest`。
